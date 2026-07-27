@@ -114,6 +114,9 @@
             <div class="calc-result" id="calcResult" style="display: none;">
               <!-- Dynamically populated math returns -->
             </div>
+            <div class="calc-chart-wrap" id="calcChartWrap" style="display:none; max-width:260px; margin:16px auto 0;">
+              <canvas id="calcChart"></canvas>
+            </div>
           </div>
         </div>
       </section>
@@ -222,6 +225,7 @@
       <footer class="input-area" role="contentinfo">
         <div class="input-wrapper">
           <input type="text" id="userInput" placeholder="Apna financial sawaal puchho..." autocomplete="off" aria-label="User Financial Question Entry Field" />
+          <button class="mic-btn" id="micBtn" title="Bolke poochho (voice input)" aria-label="Voice input">🎤</button>
           <button class="send-btn" id="sendBtn" title="Send Message" aria-label="Send Message button">➤</button>
         </div>
         <div class="disclaimer">⚠️ General info only — investment se pehle certified advisor se zaroor milo</div>
@@ -294,6 +298,7 @@
   </div>
 
   <!-- Modular Application Controller -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
   <script type="module" src="src/js/app.js"></script>
 </body>
 </html>

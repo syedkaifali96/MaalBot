@@ -319,6 +319,9 @@ function setupListeners() {
   // Send click
   ui.sendBtn.addEventListener('click', sendMessageFlow);
 
+  // Voice input (Web Speech API) — not supported in all browsers (e.g. Firefox desktop)
+  setupVoiceInput();
+
   // Global delegate selector for chips & cards
   document.addEventListener('click', (e) => {
     const chip = e.target.closest('.chip');
@@ -342,6 +345,62 @@ function setupListeners() {
 
   // Workspace Main Logout click
   document.getElementById('logoutBtn').addEventListener('click', logoutFlow);
+}
+
+/**
+ * Wires the mic button to browser speech recognition (Hinglish/Urdu-friendly:
+ * falls back to English recognition since ur-PK support varies by browser).
+ * Silently no-ops (hides the button) if the API isn't available.
+ */
+function setupVoiceInput() {
+  const micBtn = document.getElementById('micBtn');
+  if (!micBtn) return;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    micBtn.style.display = 'none';
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  let listening = false;
+
+  recognition.addEventListener('result', (e) => {
+    const transcript = e.results?.[0]?.[0]?.transcript;
+    if (transcript) {
+      ui.userInput.value = transcript;
+      ui.userInput.focus();
+    }
+  });
+
+  recognition.addEventListener('end', () => {
+    listening = false;
+    micBtn.classList.remove('mic-active');
+  });
+
+  recognition.addEventListener('error', (e) => {
+    listening = false;
+    micBtn.classList.remove('mic-active');
+    console.warn('Speech recognition error:', e.error);
+  });
+
+  micBtn.addEventListener('click', () => {
+    if (listening) {
+      recognition.stop();
+      return;
+    }
+    try {
+      recognition.start();
+      listening = true;
+      micBtn.classList.add('mic-active');
+    } catch (err) {
+      console.warn('Could not start speech recognition:', err);
+    }
+  });
 }
 
 function setTheme(theme) {

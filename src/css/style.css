@@ -1333,6 +1333,37 @@ select:focus-visible {
   transform: none;
 }
 
+.mic-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border, rgba(255,255,255,0.15));
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.mic-btn:hover {
+  transform: scale(1.05);
+}
+
+.mic-btn.mic-active {
+  background: rgba(220, 60, 60, 0.15);
+  border-color: rgba(220, 60, 60, 0.6);
+  animation: micPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220,60,60,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(220,60,60,0); }
+}
+
 .disclaimer {
   text-align: center;
   font-size: 10px;

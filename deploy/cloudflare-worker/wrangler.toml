@@ -1,0 +1,11 @@
+name = "maalbot-proxy"
+main = "worker.js"
+compatibility_date = "2026-07-27"
+
+# Secrets (set via `wrangler secret put GROQ_API_KEY`, never commit real keys here):
+#   GROQ_API_KEY
+
+# Optional KV binding for rate-limiting (uncomment after `wrangler kv:namespace create RATE_LIMIT_KV`):
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "<your-namespace-id>"

@@ -75,6 +75,22 @@
 
 ---
 
+## 🚀 Advanced Features
+
+**Live now (no setup needed):**
+- 🎤 **Voice input** — mic button next to the chat box (Web Speech API; works in Chrome/Edge, not all browsers)
+- 🔊 **Voice output** — "Suno" button on every bot reply reads it aloud
+- 📊 **Portfolio breakdown chart** — the savings calculator now shows a principal-vs-profit doughnut chart (Chart.js)
+- 🛡️ **Live-data guardrails** — gold rate & USD/PKR are fetched live where possible; for anything else time-sensitive (NSC/bank/PSX rates), the bot is instructed to say "check the live source" instead of guessing a stale number
+
+**Ready to deploy yourself (needs your own free account — see `/deploy`):**
+- `/deploy/cloudflare-worker/` — proxies Groq calls so your API key never sits exposed in the browser's localStorage
+- `/deploy/supabase/` — real user accounts (email/Google) + cloud sync, so sessions follow you across devices instead of living only in one browser's localStorage
+
+Each folder's file has step-by-step setup comments at the top.
+
+---
+
 ## 🚀 Getting Started
 
 Simply open `index.html` directly in any web browser to explore. Alternatively, run a local development server:

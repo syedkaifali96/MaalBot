@@ -167,6 +167,27 @@ export class UIManager {
       });
     });
     bubble.appendChild(copyBtn);
+
+    // Voice-output button (reads the response aloud using the browser's built-in TTS)
+    if ('speechSynthesis' in window) {
+      const speakBtn = document.createElement('button');
+      speakBtn.className = 'copy-msg-btn';
+      speakBtn.innerHTML = '🔊 Suno';
+      speakBtn.setAttribute('title', 'Awaz mein suno');
+      speakBtn.addEventListener('click', () => {
+        if (speechSynthesis.speaking) {
+          speechSynthesis.cancel();
+          speakBtn.innerHTML = '🔊 Suno';
+          return;
+        }
+        const utter = new SpeechSynthesisUtterance(text.replace(/[*_#`]/g, ''));
+        utter.rate = 1;
+        utter.onend = () => { speakBtn.innerHTML = '🔊 Suno'; };
+        speakBtn.innerHTML = '⏸ Stop';
+        speechSynthesis.speak(utter);
+      });
+      bubble.appendChild(speakBtn);
+    }
   }
 
   /**
@@ -305,5 +326,42 @@ export class UIManager {
       </div>
     `;
     resultBox.style.display = 'block';
+
+    this.renderCalcChart(principal, profit);
+  }
+
+  /**
+   * Renders a principal-vs-profit breakdown pie chart for the calculator result.
+   * Requires Chart.js (loaded via CDN in index.html). Destroys any prior instance
+   * before drawing a fresh one so repeated calculations don't stack canvases.
+   */
+  renderCalcChart(principal, profit) {
+    const wrap = document.getElementById('calcChartWrap');
+    const canvas = document.getElementById('calcChart');
+    if (!wrap || !canvas || typeof window.Chart === 'undefined') return;
+
+    wrap.style.display = 'block';
+
+    if (this._calcChartInstance) {
+      this._calcChartInstance.destroy();
+    }
+
+    this._calcChartInstance = new window.Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Principal', 'Estimated Profit'],
+        datasets: [{
+          data: [Math.round(principal), Math.round(profit)],
+          backgroundColor: ['#3b82f6', '#f5b642'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).color || '#ccc' } }
+        }
+      }
+    });
   }
 }
