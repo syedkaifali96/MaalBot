@@ -61,32 +61,68 @@ async function fetchLiveGoldRatePKR() {
   }
 }
 
+// Cache live USD/PKR rate separately (reuses same free endpoint as gold's FX leg)
+let _fxCache = { data: null, ts: 0 };
+const FX_CACHE_MS = 5 * 60 * 1000;
+
+async function fetchLiveUsdPkr() {
+  const now = Date.now();
+  if (_fxCache.data && (now - _fxCache.ts) < FX_CACHE_MS) {
+    return _fxCache.data;
+  }
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    if (!res.ok) return null;
+    const json = await res.json();
+    const rate = json?.rates?.PKR;
+    if (!rate) return null;
+    const result = { rate, fetchedAt: new Date().toISOString() };
+    _fxCache = { data: result, ts: now };
+    return result;
+  } catch (err) {
+    console.warn('Live USD/PKR fetch failed:', err);
+    return null;
+  }
+}
+
 /**
- * Builds the system message. If the user's latest message looks gold-related,
- * fetches a live rate and injects it as ground truth so the model doesn't
- * guess from stale training data.
+ * Builds the system message. If the user's latest message looks gold-related
+ * or currency-related, fetches live data and injects it as ground truth so
+ * the model doesn't guess from stale training data. For everything else, the
+ * base SYSTEM_PROMPT's own guardrail (never invent time-sensitive numbers)
+ * still applies.
  */
 async function buildSystemMessage(messages) {
   const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.content || '';
   const mentionsGold = /\bgold\b|\bsona\b|\btola\b|\bsarafa\b/i.test(lastUserMsg);
+  const mentionsFx = /\busd\b|\bdollar\b|\bdolar\b|\bexchange rate\b|\bpkr\b.*\brate\b/i.test(lastUserMsg);
 
-  if (!mentionsGold) {
+  if (!mentionsGold && !mentionsFx) {
     return { role: 'system', content: SYSTEM_PROMPT };
   }
 
-  const live = await fetchLiveGoldRatePKR();
-  if (!live) {
-    const days = Math.max(0, Math.round((Date.now() - new Date(GOLD_RATE_ANCHOR.asOf).getTime()) / 86400000));
-    return {
-      role: 'system',
-      content: SYSTEM_PROMPT + `\n\nLIVE DATA UNAVAILABLE (fetch blocked) — use this verified anchor instead of any other number you might recall: as of ${GOLD_RATE_ANCHOR.asOf}, 24K gold was approximately PKR ${GOLD_RATE_ANCHOR.tola24k.toLocaleString()} per tola. That was ${days} din pehle, aur gold rate roz thoda change hota hai (usually within a few thousand PKR), isliye "approximately PKR ${GOLD_RATE_ANCHOR.tola24k.toLocaleString()}, thoda kam/zyada ho sakta hai — exact rate ke liye aaj ka Sarafa Bazar rate check karo" jaisa bolo. NEVER quote a number far below this (like 200,000) — that is outdated/wrong.`
-    };
+  let extra = '';
+
+  if (mentionsGold) {
+    const live = await fetchLiveGoldRatePKR();
+    if (live) {
+      extra += `\n\nLIVE DATA (use this, do not invent other numbers): Aaj (${live.fetchedAt}) ka approximate 24K gold rate: PKR ${live.tola24k.toLocaleString()} per tola, PKR ${live.gram24k.toLocaleString()} per gram. Ye international spot price (USD ${live.usdPerOz}/oz) aur USD/PKR (${live.usdToPkr}) se calculate kiya hai — actual Sarafa Bazar rate mein local premium/margin se thoda farq ho sakta hai, isliye "approximately" bolna aur exact local rate check karne ki advice dena.`;
+    } else {
+      const days = Math.max(0, Math.round((Date.now() - new Date(GOLD_RATE_ANCHOR.asOf).getTime()) / 86400000));
+      extra += `\n\nLIVE GOLD DATA UNAVAILABLE (fetch blocked) — use this verified anchor instead of any other number you might recall: as of ${GOLD_RATE_ANCHOR.asOf}, 24K gold was approximately PKR ${GOLD_RATE_ANCHOR.tola24k.toLocaleString()} per tola. That was ${days} din pehle, aur gold rate roz thoda change hota hai (usually within a few thousand PKR), isliye "approximately PKR ${GOLD_RATE_ANCHOR.tola24k.toLocaleString()}, thoda kam/zyada ho sakta hai — exact rate ke liye aaj ka Sarafa Bazar rate check karo" jaisa bolo. NEVER quote a number far below this (like 200,000) — that is outdated/wrong.`;
+    }
   }
 
-  return {
-    role: 'system',
-    content: SYSTEM_PROMPT + `\n\nLIVE DATA (use this, do not invent other numbers): Aaj (${live.fetchedAt}) ka approximate 24K gold rate: PKR ${live.tola24k.toLocaleString()} per tola, PKR ${live.gram24k.toLocaleString()} per gram. Ye international spot price (USD ${live.usdPerOz}/oz) aur USD/PKR (${live.usdToPkr}) se calculate kiya hai — actual Sarafa Bazar rate mein local premium/margin se thoda farq ho sakta hai, isliye "approximately" bolna aur exact local rate check karne ki advice dena.`
-  };
+  if (mentionsFx) {
+    const fx = await fetchLiveUsdPkr();
+    if (fx) {
+      extra += `\n\nLIVE DATA (use this): Aaj (${fx.fetchedAt}) 1 USD ≈ PKR ${fx.rate.toFixed(2)}. Note: ye interbank/reference rate hai, open market (exchange companies) ka rate thoda different ho sakta hai.`;
+    } else {
+      extra += `\n\nLIVE FX DATA UNAVAILABLE — exact current USD/PKR rate apni memory se invent MAT karo. Bolo ke exact rate nahi pata, aur user ko SBP website ya kisi currency converter/exchange company se live rate check karne ko kaho.`;
+    }
+  }
+
+  return { role: 'system', content: SYSTEM_PROMPT + extra };
 }
 
 /**
