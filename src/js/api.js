@@ -1,4 +1,4 @@
-import { SYSTEM_PROMPT, DEFAULT_MODEL } from './config.js';
+import { SYSTEM_PROMPT, DEFAULT_MODEL, GOLD_RATE_ANCHOR } from './config.js';
 
 export class APIError extends Error {
   constructor(message, status, type = 'API_ERROR') {
@@ -76,9 +76,10 @@ async function buildSystemMessage(messages) {
 
   const live = await fetchLiveGoldRatePKR();
   if (!live) {
+    const days = Math.max(0, Math.round((Date.now() - new Date(GOLD_RATE_ANCHOR.asOf).getTime()) / 86400000));
     return {
       role: 'system',
-      content: SYSTEM_PROMPT + '\n\nIMPORTANT: Tumhare paas live gold rate access nahi hai is waqt. Koi specific PKR figure invent MAT karo — user ko batao ke live rate check karein (e.g. Sarafa Bazar / goldprice sites) aur sirf general guidance do.'
+      content: SYSTEM_PROMPT + `\n\nLIVE DATA UNAVAILABLE (fetch blocked) — use this verified anchor instead of any other number you might recall: as of ${GOLD_RATE_ANCHOR.asOf}, 24K gold was approximately PKR ${GOLD_RATE_ANCHOR.tola24k.toLocaleString()} per tola. That was ${days} din pehle, aur gold rate roz thoda change hota hai (usually within a few thousand PKR), isliye "approximately PKR ${GOLD_RATE_ANCHOR.tola24k.toLocaleString()}, thoda kam/zyada ho sakta hai — exact rate ke liye aaj ka Sarafa Bazar rate check karo" jaisa bolo. NEVER quote a number far below this (like 200,000) — that is outdated/wrong.`
     };
   }
 

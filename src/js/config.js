@@ -15,6 +15,14 @@ IMPORTANT: Specific stock tips mat do. Tu legally financial advisor nahi.`;
 
 export const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 
+// Manually verified anchor point (update periodically). Used as a fallback
+// when the live gold-rate fetch is blocked (e.g. CORS) so the bot never
+// falls back to its stale training-data guess.
+export const GOLD_RATE_ANCHOR = {
+  tola24k: 432500,
+  asOf: '2026-07-27'
+};
+
 export const MODELS = [
   { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Smart)' },
   { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B (Fast)' },
