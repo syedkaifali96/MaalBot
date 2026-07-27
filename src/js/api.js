@@ -9,6 +9,85 @@ export class APIError extends Error {
   }
 }
 
+// Cache live gold rate for a few minutes so we don't hit the endpoints on every message
+let _goldCache = { data: null, ts: 0 };
+const GOLD_CACHE_MS = 5 * 60 * 1000;
+
+/**
+ * Fetches a live gold price estimate for Pakistan (PKR per tola) using
+ * public, key-free endpoints: goldprice.org (USD/oz spot) + open.er-api.com (USD/PKR).
+ * Returns null on any failure so the caller can gracefully degrade.
+ */
+async function fetchLiveGoldRatePKR() {
+  const now = Date.now();
+  if (_goldCache.data && (now - _goldCache.ts) < GOLD_CACHE_MS) {
+    return _goldCache.data;
+  }
+
+  try {
+    const [goldRes, fxRes] = await Promise.all([
+      fetch('https://data-asg.goldprice.org/dbXRates/USD'),
+      fetch('https://open.er-api.com/v6/latest/USD')
+    ]);
+
+    if (!goldRes.ok || !fxRes.ok) return null;
+
+    const goldJson = await goldRes.json();
+    const fxJson = await fxRes.json();
+
+    const usdPerOz = goldJson?.items?.[0]?.xauPrice;
+    const usdToPkr = fxJson?.rates?.PKR;
+
+    if (!usdPerOz || !usdToPkr) return null;
+
+    const OZ_TO_GRAM = 31.1035;
+    const TOLA_TO_GRAM = 11.6638;
+    const pricePerGramUSD = usdPerOz / OZ_TO_GRAM;
+    const pricePerTolaPKR = pricePerGramUSD * TOLA_TO_GRAM * usdToPkr;
+
+    const result = {
+      tola24k: Math.round(pricePerTolaPKR),
+      gram24k: Math.round(pricePerTolaPKR / TOLA_TO_GRAM),
+      usdPerOz,
+      usdToPkr,
+      fetchedAt: new Date().toISOString()
+    };
+
+    _goldCache = { data: result, ts: now };
+    return result;
+  } catch (err) {
+    console.warn('Live gold rate fetch failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Builds the system message. If the user's latest message looks gold-related,
+ * fetches a live rate and injects it as ground truth so the model doesn't
+ * guess from stale training data.
+ */
+async function buildSystemMessage(messages) {
+  const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.content || '';
+  const mentionsGold = /\bgold\b|\bsona\b|\btola\b|\bsarafa\b/i.test(lastUserMsg);
+
+  if (!mentionsGold) {
+    return { role: 'system', content: SYSTEM_PROMPT };
+  }
+
+  const live = await fetchLiveGoldRatePKR();
+  if (!live) {
+    return {
+      role: 'system',
+      content: SYSTEM_PROMPT + '\n\nIMPORTANT: Tumhare paas live gold rate access nahi hai is waqt. Koi specific PKR figure invent MAT karo — user ko batao ke live rate check karein (e.g. Sarafa Bazar / goldprice sites) aur sirf general guidance do.'
+    };
+  }
+
+  return {
+    role: 'system',
+    content: SYSTEM_PROMPT + `\n\nLIVE DATA (use this, do not invent other numbers): Aaj (${live.fetchedAt}) ka approximate 24K gold rate: PKR ${live.tola24k.toLocaleString()} per tola, PKR ${live.gram24k.toLocaleString()} per gram. Ye international spot price (USD ${live.usdPerOz}/oz) aur USD/PKR (${live.usdToPkr}) se calculate kiya hai — actual Sarafa Bazar rate mein local premium/margin se thoda farq ho sakta hai, isliye "approximately" bolna aur exact local rate check karne ki advice dena.`
+  };
+}
+
 /**
  * Handles communication with the Groq API (supports streaming and non-streaming responses).
  * @param {string} apiKey - The Groq API key.
@@ -23,7 +102,7 @@ export async function sendChatRequest(apiKey, messages, settings = {}, onChunk =
   }
 
   const model = settings.model || DEFAULT_MODEL;
-  const systemMessage = { role: 'system', content: SYSTEM_PROMPT };
+  const systemMessage = await buildSystemMessage(messages);
   const payload = {
     model: model,
     temperature: settings.temperature !== undefined ? parseFloat(settings.temperature) : 0.7,
