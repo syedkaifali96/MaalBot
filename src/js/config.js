@@ -17,6 +17,10 @@ IMPORTANT: Specific stock tips mat do. Tu legally financial advisor nahi.`;
 
 export const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 
+// Requests now go through a Cloudflare Worker proxy that holds the real Groq
+// API key server-side, so the browser never needs (or sees) the key.
+export const API_ENDPOINT = 'https://maalbot-proxy.syedkaifali96.workers.dev';
+
 // Manually verified anchor point (update periodically). Used as a fallback
 // when the live gold-rate fetch is blocked (e.g. CORS) so the bot never
 // falls back to its stale training-data guess.

@@ -1,4 +1,4 @@
-import { SYSTEM_PROMPT, DEFAULT_MODEL, GOLD_RATE_ANCHOR } from './config.js';
+import { SYSTEM_PROMPT, DEFAULT_MODEL, GOLD_RATE_ANCHOR, API_ENDPOINT } from './config.js';
 
 export class APIError extends Error {
   constructor(message, status, type = 'API_ERROR') {
@@ -126,18 +126,16 @@ async function buildSystemMessage(messages) {
 }
 
 /**
- * Handles communication with the Groq API (supports streaming and non-streaming responses).
- * @param {string} apiKey - The Groq API key.
+ * Sends the chat request through the MaalBot Cloudflare Worker proxy, which
+ * holds the real Groq API key server-side (see /deploy/cloudflare-worker).
+ * The browser no longer needs or sends any API key.
+ * @param {string} apiKey - Unused, kept for call-site compatibility.
  * @param {Array<{role: string, content: string}>} messages - The message history.
  * @param {object} settings - Model and temperature settings.
  * @param {function} onChunk - Optional callback for streaming chunks: (textChunk) => void
  * @returns {Promise<string>} The full assistant response text.
  */
 export async function sendChatRequest(apiKey, messages, settings = {}, onChunk = null) {
-  if (!apiKey) {
-    throw new APIError('API Key is missing. Please enter a valid Groq API key.', 400, 'MISSING_KEY');
-  }
-
   const model = settings.model || DEFAULT_MODEL;
   const systemMessage = await buildSystemMessage(messages);
   const payload = {
@@ -153,11 +151,10 @@ export async function sendChatRequest(apiKey, messages, settings = {}, onChunk =
   const timeoutId = setTimeout(() => controller.abort(), 20000);
 
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const res = await fetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload),
       signal: controller.signal

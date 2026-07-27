@@ -37,14 +37,10 @@ function initApp() {
   // Load multiple chat sessions state
   loadSessionsState();
 
-  // UI Flow Route Handler
-  if (apiKey) {
-    ui.apiKeyInput.value = apiKey;
-    ui.showScreen('app');
-    refreshChatWorkspace();
-  } else {
-    ui.showScreen('landing');
-  }
+  // UI Flow Route Handler — the Cloudflare Worker proxy holds the real Groq
+  // key server-side now, so we no longer require the user to enter one.
+  ui.showScreen('app');
+  refreshChatWorkspace();
 
   // Attach interactive listeners
   setupListeners();
@@ -176,11 +172,13 @@ function refreshChatWorkspace() {
 function setupListeners() {
   // Landing page launch/planning buttons
   document.getElementById('landingCtaLaunch').addEventListener('click', () => {
-    ui.showScreen(apiKey ? 'app' : 'api');
+    ui.showScreen('app');
+    refreshChatWorkspace();
   });
 
   document.getElementById('heroStartBtn').addEventListener('click', () => {
-    ui.showScreen(apiKey ? 'app' : 'api');
+    ui.showScreen('app');
+    refreshChatWorkspace();
   });
 
   document.getElementById('apiBackBtn').addEventListener('click', () => {
