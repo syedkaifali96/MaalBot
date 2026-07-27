@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MaalBot Premium — Pakistan's Elite AI Financial Advisor</title>
+  
+  <!-- SEO Optimization Meta Tags -->
+  <meta name="description" content="MaalBot Premium is Pakistan's leading interactive AI financial advisor. Calculate low-risk mutual fund yields, manage investments, and get expert financial strategies in Roman Urdu and English.">
+  <meta name="keywords" content="Pakistan Finance, Islamic Banking, Mutual Funds Pakistan, AI Advisor, Savings Calculator PKR, MaalBot">
+  <meta name="author" content="MaalBot Premium">
+  <meta property="og:title" content="MaalBot Premium — Pakistan's Elite AI Financial Advisor">
+  <meta property="og:description" content="Calculate low-risk yields, structure halal investments, and get tailored financial planning instantly in Hinglish.">
+  <meta property="og:type" content="website">
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Modular Stylesheet -->
+  <link rel="stylesheet" href="src/css/style.css">
+</head>
+<body class="dark-theme">
+
+  <!-- Toast Container Overlay -->
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Landing Page Screen -->
+  <div id="landingScreen" class="view-screen active">
+    <!-- Navigation header -->
+    <header class="landing-header" role="banner">
+      <div class="header-logo">
+        <span class="logo-badge">💰</span>
+        <div class="logo-text">
+          <h2>MaalBot <span class="premium-text-badge">PREMIUM</span></h2>
+          <p>PAKISTAN FINANCIAL INTEL</p>
+        </div>
+      </div>
+      <div class="nav-controls">
+        <button class="theme-toggle-btn" id="landingThemeToggle" aria-label="Toggle Theme" title="Toggle Light/Dark Theme">🌓</button>
+        <button class="cta-launch-btn" id="landingCtaLaunch">Launch Advisor 🚀</button>
+      </div>
+    </header>
+
+    <main class="landing-main" role="main">
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-pill">🔥 Powered by Groq Llama 3.3 70B</div>
+        <h1>Apne Paisay Ko <span class="gold-gradient-text">MaalDar</span> Banayein.</h1>
+        <p class="hero-subtext">
+          Pakistan's first elite financial AI advisor. Get instant, practical, and highly strategic advice on Mutual Funds, Gold, Real Estate, Bahbood, and Halal Islamic Banking in Roman Urdu & English.
+        </p>
+        <div class="hero-actions">
+          <button class="hero-btn-primary" id="heroStartBtn">Start Planning Now — It's Free</button>
+          <a href="#calculator" class="hero-btn-secondary">Interactive ROI Calculator</a>
+        </div>
+        
+        <!-- Premium Google Sign-In Integration Panel -->
+        <div class="auth-box-landing">
+          <p>⚡ OR SIGN IN SECURELY TO PRESERVE MULTI-DEVICE SESSION CHATS</p>
+          <button class="google-auth-btn" id="googleAuthBtn" aria-label="Sign in optionally with Google">
+            <span class="g-icon">🌐</span> Google Sign-In (Optional)
+          </button>
+        </div>
+      </section>
+
+      <!-- Key Interactive Features Grid -->
+      <section class="features-section">
+        <h2 class="section-title">Premium Architecture</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <span class="feat-icon">⚡</span>
+            <h3>Real-Time Streaming</h3>
+            <p>No waiting. Get instantaneous responses streaming word-by-word with our ultra-fast Groq engine.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feat-icon">🕌</span>
+            <h3>Halal & Shariah Compliance</h3>
+            <p>Filter options through certified Islamic Banking and low-risk Halal mutual fund frameworks.</p>
+          </div>
+          <div class="feature-card">
+            <span class="feat-icon">📊</span>
+            <h3>Portfolio Strategies</h3>
+            <p>From Bahbood certificates to PSX equity distributions, optimize your specific capital thresholds safely.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive Savings Calculator Component (Value Add) -->
+      <section id="calculator" class="calculator-section">
+        <div class="calc-glass-box">
+          <div class="calc-header">
+            <span class="calc-badge">📊 SMART TOOL</span>
+            <h2>Low-Risk Mutual Fund Estimator</h2>
+            <p>Calculate potential yields of safe money market and Islamic savings accounts in Pakistan (Assumed rate: 18% p.a.)</p>
+          </div>
+          <div class="calc-body">
+            <div class="calc-input-group">
+              <label for="calcAmount">Investment Amount (PKR)</label>
+              <div class="pkr-input-wrapper">
+                <span class="pkr-lbl">Rs.</span>
+                <input type="number" id="calcAmount" value="1000000" min="10000" step="50000" aria-label="Investment Amount in PKR">
+              </div>
+            </div>
+            <div class="calc-input-group">
+              <label for="calcYears">Duration (Years)</label>
+              <select id="calcYears" aria-label="Duration in Years">
+                <option value="1">1 Year</option>
+                <option value="3" selected>3 Years</option>
+                <option value="5">5 Years</option>
+                <option value="10">10 Years</option>
+              </select>
+            </div>
+            <button class="calc-btn" id="runCalcBtn">Calculate Estimated Wealth 💰</button>
+            <div class="calc-result" id="calcResult" style="display: none;">
+              <!-- Dynamically populated math returns -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="landing-footer" role="contentinfo">
+      <p>© 2026 MaalBot Premium. Structured exclusively with safe local sandboxing. All key data stays client-side.</p>
+    </footer>
+  </div>
+
+
+  <!-- API Access Setup Screen -->
+  <div id="apiScreen" class="view-screen">
+    <div class="api-box">
+      <button class="back-to-landing-btn" id="apiBackBtn" aria-label="Back to landing page">← Back</button>
+      <div class="icon">🔑</div>
+      <h2>Secure API Connection</h2>
+      <p>
+        Apni <strong class="highlight-gold">Groq API Key</strong> daalo shuru karne ke liye.<br>
+        Free key yahan milegi: <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer">console.groq.com</a><br><br>
+        <span class="secure-badge">🔒 Key sirf tumhare browser mein rahegi — direct server-to-server request hogi</span>
+      </p>
+      <input type="password" id="apiKeyInput" placeholder="gsk_..." autocomplete="current-password" aria-label="Groq API Key" />
+      <div class="api-error" id="apiError" style="display: none;">❌ Valid Groq key daalo! (gsk_ se shuru honi chahiye)</div>
+      <button class="start-btn" id="startBtn">🚀 Launch Workspace</button>
+      <div class="api-note">✅ Bilkul FREE — Llama-3.3-70b stream completions compile honge</div>
+    </div>
+  </div>
+
+
+  <!-- Premium Chat Workspace Screen -->
+  <div id="app" class="view-screen">
+    
+    <!-- Sidebar component for conversational session tracking -->
+    <aside class="sidebar" id="sidebar" role="complementary" aria-label="Chat Sessions">
+      <div class="sidebar-header">
+        <span class="sidebar-logo-badge">💰</span>
+        <h3>Conversations</h3>
+        <button class="sidebar-toggle-btn mobile-only" id="sidebarCloseBtn" aria-label="Close Sidebar">✕</button>
+      </div>
+
+      <!-- Real-Time Chat Search Filter Input -->
+      <div class="search-sidebar-box">
+        <input type="text" id="chatSearchInput" placeholder="🔍 Search sessions..." aria-label="Search conversation list" />
+      </div>
+
+      <button class="new-chat-btn" id="newChatBtn">+ New Session</button>
+      <div class="session-list" id="sessionList">
+        <!-- Dynamically populated chat session list -->
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-status-card">
+          <div class="status-dot-active"></div>
+          <span class="status-username" id="statusUsername">Session Active</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay backdrop for responsive sidebar drawer on mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="workspace">
+      <header class="workspace-header" role="banner">
+        <button class="sidebar-toggle-trigger" id="sidebarOpenBtn" aria-label="Open Sidebar" title="Open Conversation List">☰</button>
+        <div class="header-branding">
+          <h2>MaalBot Workspace</h2>
+          <p class="current-model-label" id="currentModelLabel">Loading configuration...</p>
+        </div>
+        <div class="workspace-actions">
+          <button class="header-action-btn" id="appThemeToggle" aria-label="Toggle Theme" title="Toggle Light/Dark Theme">🌓</button>
+          <button class="header-action-btn" id="exportChatBtn" aria-label="Export Conversation" title="Export Conversation History">📥 Export</button>
+          <button class="header-action-btn" id="settingsOpenBtn" aria-label="Open Settings" title="Open Settings Modal">⚙️ Settings</button>
+          <button class="logout-btn" id="logoutBtn" title="Change API Key / Clear Session">🔑 Logout</button>
+        </div>
+      </header>
+
+      <!-- Suggestion list row -->
+      <nav class="quick-bar" aria-label="Quick financial advice suggest tags">
+        <div class="chip" data-query="25 lakh invest karne ke best options kya hain Pakistan mein?">💼 25L Invest</div>
+        <div class="chip" data-query="Gold abhi kharidna chahiye? War situation mein advice do.">🥇 Gold Buy?</div>
+        <div class="chip" data-query="National Savings Certificate kya hai aur kaise kaam karta hai?">🏦 NSC kya hai</div>
+        <div class="chip" data-query="Mutual funds vs Fixed deposit Pakistan mein — kaunsa better hai?">📊 MF vs FD</div>
+        <div class="chip" data-query="War/tension ke time mein paisa kahan rakhna chahiye?">⚠️ War Safety</div>
+        <div class="chip" data-query="Islamic banking investment options kya hain Pakistan mein?">🕌 Halal Options</div>
+      </nav>
+
+      <!-- Main Scrollable Chat Screen Container -->
+      <main class="chat-area" id="chatArea" role="main" aria-label="Chat messages list">
+        <!-- Dynamically rendered messages, loading skeletons, and welcome templates are appended here -->
+      </main>
+
+      <!-- Loading Skeletons layout to be cloned dynamically -->
+      <template id="skeletonTemplate">
+        <div class="message bot skeleton-message">
+          <div class="avatar bot">💰</div>
+          <div class="bubble">
+            <div class="skeleton-line skeleton-line-title"></div>
+            <div class="skeleton-line skeleton-line-paragraph"></div>
+            <div class="skeleton-line skeleton-line-short"></div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Bottom query text entry segment -->
+      <footer class="input-area" role="contentinfo">
+        <div class="input-wrapper">
+          <input type="text" id="userInput" placeholder="Apna financial sawaal puchho..." autocomplete="off" aria-label="User Financial Question Entry Field" />
+          <button class="send-btn" id="sendBtn" title="Send Message" aria-label="Send Message button">➤</button>
+        </div>
+        <div class="disclaimer">⚠️ General info only — investment se pehle certified advisor se zaroor milo</div>
+      </footer>
+    </div>
+  </div>
+
+
+  <!-- Settings Customization Modal overlay -->
+  <div class="modal-backdrop" id="settingsModal" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Workspace Customization ⚙️</h3>
+        <button class="modal-close-btn" id="settingsCloseBtn" aria-label="Close Settings">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-group">
+          <label for="settingsModelSelect">Active AI Engine Model</label>
+          <select id="settingsModelSelect" aria-label="Active LLM Model Selection">
+            <!-- Programmatically populated options based on config.MODELS -->
+          </select>
+        </div>
+        <div class="settings-group">
+          <label for="settingsTemperature">Advisor Creativity/Risk Level</label>
+          <select id="settingsTemperature" aria-label="LLM Temperature Settings">
+            <option value="0.2">Extremely Conservative / Fixed Advice (Temp: 0.2)</option>
+            <option value="0.7" selected>Standard Balanced Advisor (Temp: 0.7)</option>
+            <option value="1.0">Innovative / High Growth Explorer (Temp: 1.0)</option>
+          </select>
+        </div>
+        <button class="settings-save-btn" id="settingsSaveBtn">Save Changes ✅</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Export Selector Modal overlay -->
+  <div class="modal-backdrop" id="exportModal" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Export Chat History 📥</h3>
+        <button class="modal-close-btn" id="exportCloseBtn" aria-label="Close Export Dialog">✕</button>
+      </div>
+      <div class="modal-body export-modal-body">
+        <p>Save and read your session strategies offline. Pick your preferred format:</p>
+        <div class="export-actions-grid">
+          <button class="export-opt-btn" id="exportTxtBtn">
+            <span class="opt-icon">📝</span>
+            <h4>Plain Text Document (.txt)</h4>
+            <p>Readable on all standard devices and text viewers.</p>
+          </button>
+          <button class="export-opt-btn" id="exportJsonBtn">
+            <span class="opt-icon">⚙️</span>
+            <h4>Structured Data (.json)</h4>
+            <p>Export JSON formatting for advanced system loads.</p>
+          </button>
+          <button class="export-opt-btn" id="exportMdBtn">
+            <span class="opt-icon">🏷️</span>
+            <h4>Markdown Document (.md)</h4>
+            <p>Export rich formatted text document with outlines.</p>
+          </button>
+          <button class="export-opt-btn" id="exportPdfBtn">
+            <span class="opt-icon">📄</span>
+            <h4>Printable PDF File (.pdf)</h4>
+            <p>Generate highly beautiful strategy document layout to print.</p>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modular Application Controller -->
+  <script type="module" src="src/js/app.js"></script>
+</body>
+</html>
