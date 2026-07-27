@@ -2,6 +2,14 @@ import { escapeHTML, parseMarkdown, copyToClipboard } from './utils.js';
 
 export class UIManager {
   constructor() {
+    // Speech synthesis voice list loads asynchronously in some browsers;
+    // trigger + cache it early so the "Suno" button has voices ready by
+    // the time someone clicks it.
+    if ('speechSynthesis' in window) {
+      speechSynthesis.getVoices();
+      speechSynthesis.addEventListener('voiceschanged', () => speechSynthesis.getVoices());
+    }
+
     // Screens
     this.landingScreen = document.getElementById('landingScreen');
     this.apiScreen = document.getElementById('apiScreen');
@@ -173,15 +181,32 @@ export class UIManager {
       const speakBtn = document.createElement('button');
       speakBtn.className = 'copy-msg-btn';
       speakBtn.innerHTML = '🔊 Suno';
-      speakBtn.setAttribute('title', 'Awaz mein suno');
+      speakBtn.setAttribute('title', 'Awaz mein suno (Urdu)');
       speakBtn.addEventListener('click', () => {
         if (speechSynthesis.speaking) {
           speechSynthesis.cancel();
           speakBtn.innerHTML = '🔊 Suno';
           return;
         }
-        const utter = new SpeechSynthesisUtterance(text.replace(/[*_#`]/g, ''));
-        utter.rate = 1;
+        const cleanText = text.replace(/[*_#`]/g, '');
+        const utter = new SpeechSynthesisUtterance(cleanText);
+        utter.rate = 0.95;
+
+        // Prefer an Urdu voice if the device has one installed; otherwise
+        // fall back to Hindi (closest phonetically to Roman Urdu/Hinglish),
+        // then whatever default voice exists.
+        const voices = speechSynthesis.getVoices();
+        const urduVoice = voices.find(v => v.lang?.toLowerCase().startsWith('ur'));
+        const hindiVoice = voices.find(v => v.lang?.toLowerCase().startsWith('hi'));
+        const chosenVoice = urduVoice || hindiVoice;
+
+        if (chosenVoice) {
+          utter.voice = chosenVoice;
+          utter.lang = chosenVoice.lang;
+        } else {
+          utter.lang = 'ur-PK'; // ask for Urdu even without a matched voice object
+        }
+
         utter.onend = () => { speakBtn.innerHTML = '🔊 Suno'; };
         speakBtn.innerHTML = '⏸ Stop';
         speechSynthesis.speak(utter);
