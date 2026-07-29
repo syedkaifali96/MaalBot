@@ -352,6 +352,47 @@ select:focus-visible {
   border-color: var(--gold);
 }
 
+.auth-inline-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.auth-inline-form input {
+  flex: 1;
+  min-width: 160px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13.5px;
+}
+
+.auth-inline-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.auth-status {
+  margin-top: 10px;
+  font-size: 12.5px;
+}
+
+.auth-skip-note {
+  margin-top: 12px !important;
+  font-size: 11px;
+}
+
+.auth-skip-note a {
+  color: var(--gold);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* Feature Grid section styling */
 .features-section {
   display: flex;

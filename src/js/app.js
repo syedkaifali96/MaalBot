@@ -2,6 +2,18 @@ import { Storage, exportConversation } from './utils.js';
 import { sendChatRequest } from './api.js';
 import { UIManager } from './ui.js';
 import { MODELS, DEFAULT_MODEL } from './config.js';
+import {
+  signUpWithEmail,
+  signInWithEmail,
+  signOut,
+  getCurrentUser,
+  fetchSessions,
+  upsertSession,
+  deleteSessionRemote,
+  supabase
+} from '../../deploy/supabase/auth-helper.js';
+
+let currentUser = null; // Supabase user object when logged in; null = guest/local-only mode
 
 let apiKey = '';
 let currentSessionId = '';
@@ -14,7 +26,17 @@ document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
 
-function initApp() {
+async function initApp() {
+  // Check for an existing Supabase login (e.g. returning visitor) before
+  // deciding whether sessions come from the cloud or local storage.
+  try {
+    currentUser = await getCurrentUser();
+  } catch (err) {
+    console.warn('Supabase auth check failed (continuing as guest):', err);
+    currentUser = null;
+  }
+  updateAuthUI();
+
   // Load configuration & user settings with fallback tolerance
   try {
     apiKey = Storage.get('groq_api_key') || '';
@@ -34,8 +56,8 @@ function initApp() {
   // Populate settings modal options
   populateSettingsOptions();
 
-  // Load multiple chat sessions state
-  loadSessionsState();
+  // Load multiple chat sessions state (cloud if logged in, else local)
+  await loadSessionsState();
 
   // UI Flow Route Handler — the Cloudflare Worker proxy holds the real Groq
   // key server-side now, so we no longer require the user to enter one.
@@ -71,15 +93,23 @@ function updateHeaderLabel() {
 }
 
 /**
- * Load, create or parse saved sessions state from LocalStorage.
+ * Load, create or parse saved sessions state — from Supabase when the user
+ * is logged in (cloud sync across devices), otherwise from LocalStorage
+ * (guest/local-only mode). LocalStorage is always kept as an offline cache.
  */
-function loadSessionsState() {
+async function loadSessionsState() {
   try {
-    sessions = Storage.getJson('maalbot_conversations') || [];
+    if (currentUser) {
+      const remote = await fetchSessions(currentUser.id);
+      sessions = remote.map(r => ({ id: r.id, title: r.title, messages: r.messages || [] }));
+      Storage.setJson('maalbot_conversations', sessions); // offline cache
+    } else {
+      sessions = Storage.getJson('maalbot_conversations') || [];
+    }
     currentSessionId = Storage.get('maalbot_active_session_id') || '';
   } catch (err) {
-    console.error('Failed to parse sessions from storage:', err);
-    sessions = [];
+    console.error('Failed to load sessions (falling back to local cache):', err);
+    sessions = Storage.getJson('maalbot_conversations') || [];
   }
 
   // Fallback: If no sessions exist, build a first session template
@@ -94,7 +124,7 @@ function loadSessionsState() {
 }
 
 function createNewSession() {
-  const newId = 'session_' + Date.now();
+  const newId = currentUser ? crypto.randomUUID() : 'session_' + Date.now();
   const newSession = {
     id: newId,
     title: 'New Strategy Session 💡',
@@ -109,6 +139,15 @@ function createNewSession() {
 
 function saveSessionsToStorage() {
   Storage.setJson('maalbot_conversations', sessions);
+
+  if (currentUser) {
+    const active = sessions.find(s => s.id === currentSessionId);
+    if (active) {
+      upsertSession(currentUser.id, active).catch(err =>
+        console.warn('Cloud sync failed for this session (saved locally):', err)
+      );
+    }
+  }
 }
 
 function renderSidebarSessions() {
@@ -136,6 +175,10 @@ function selectActiveSession(sessionId) {
 function deleteSession(sessionId) {
   if (confirm('Kya aap is session ki chat history delete karna chahte hain?')) {
     sessions = sessions.filter(s => s.id !== sessionId);
+
+    if (currentUser) {
+      deleteSessionRemote(sessionId).catch(err => console.warn('Cloud delete failed:', err));
+    }
     
     if (sessions.length === 0) {
       createNewSession();
@@ -255,13 +298,70 @@ function setupListeners() {
     ui.toggleModal(ui.settingsModal, false);
   });
 
-  // Optional google-auth mock click handler
-  const googleBtn = document.getElementById('googleAuthBtn');
-  if (googleBtn) {
-    googleBtn.addEventListener('click', () => {
-      import('./utils.js').then(({ showToast }) => {
-        showToast('Google Sign-In simulation complete! Session cached securely.', 'success');
-      });
+  // Cloud auth: sign up / log in with email + password (Supabase)
+  const authStatusEl = document.getElementById('authStatus');
+  const showAuthStatus = (msg, isError = false) => {
+    if (!authStatusEl) return;
+    authStatusEl.textContent = msg;
+    authStatusEl.style.display = 'block';
+    authStatusEl.style.color = isError ? '#e05656' : '#4ade80';
+  };
+
+  const signInBtn = document.getElementById('authSignInBtn');
+  const signUpBtn = document.getElementById('authSignUpBtn');
+  const skipLink = document.getElementById('authSkipLink');
+
+  if (signUpBtn) {
+    signUpBtn.addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      if (!email || !password) return showAuthStatus('Email aur password dono daalo.', true);
+      if (password.length < 6) return showAuthStatus('Password kam se kam 6 characters ka ho.', true);
+
+      signUpBtn.disabled = true;
+      const { data, error } = await signUpWithEmail(email, password);
+      signUpBtn.disabled = false;
+
+      if (error) return showAuthStatus(error.message, true);
+      if (data?.user && !data.session) {
+        showAuthStatus('Account ban gaya! Email check karo confirmation link ke liye, phir Login karo.');
+      } else if (data?.session) {
+        currentUser = data.user;
+        showAuthStatus('Account ban gaya aur login ho gaye!');
+        await loadSessionsState();
+        updateAuthUI();
+        ui.showScreen('app');
+        refreshChatWorkspace();
+      }
+    });
+  }
+
+  if (signInBtn) {
+    signInBtn.addEventListener('click', async () => {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      if (!email || !password) return showAuthStatus('Email aur password dono daalo.', true);
+
+      signInBtn.disabled = true;
+      const { data, error } = await signInWithEmail(email, password);
+      signInBtn.disabled = false;
+
+      if (error) return showAuthStatus(error.message, true);
+
+      currentUser = data.user;
+      showAuthStatus('Login ho gaya!');
+      await loadSessionsState();
+      updateAuthUI();
+      ui.showScreen('app');
+      refreshChatWorkspace();
+    });
+  }
+
+  if (skipLink) {
+    skipLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      ui.showScreen('app');
+      refreshChatWorkspace();
     });
   }
 
@@ -437,8 +537,13 @@ function handleApiSubmit() {
   refreshChatWorkspace();
 }
 
-function logoutFlow() {
+async function logoutFlow() {
   if (confirm('Kya aap logout karna chahte hain? (Aapka local configuration clear ho jayega)')) {
+    if (currentUser) {
+      await signOut().catch(err => console.warn('Supabase sign-out failed:', err));
+      currentUser = null;
+    }
+
     apiKey = '';
     sessions = [];
     currentSessionId = '';
@@ -448,10 +553,23 @@ function logoutFlow() {
     Storage.remove('maalbot_active_session_id');
 
     ui.apiKeyInput.value = '';
+    updateAuthUI();
     
     // Reset back to base setup
-    loadSessionsState();
+    await loadSessionsState();
     ui.showScreen('landing');
+  }
+}
+
+/**
+ * Reflects login state in the UI: hides the email/password form and shows
+ * a "logged in as X" note once authenticated.
+ */
+function updateAuthUI() {
+  const box = document.getElementById('authBoxLanding');
+  if (!box) return;
+  if (currentUser) {
+    box.innerHTML = `<p>✅ Logged in as <strong>${currentUser.email}</strong> — chat history is synced to the cloud.</p>`;
   }
 }
 

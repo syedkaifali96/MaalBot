@@ -54,12 +54,19 @@
           <a href="#calculator" class="hero-btn-secondary">Interactive ROI Calculator</a>
         </div>
         
-        <!-- Premium Google Sign-In Integration Panel -->
-        <div class="auth-box-landing">
-          <p>⚡ OR SIGN IN SECURELY TO PRESERVE MULTI-DEVICE SESSION CHATS</p>
-          <button class="google-auth-btn" id="googleAuthBtn" aria-label="Sign in optionally with Google">
-            <span class="g-icon">🌐</span> Google Sign-In (Optional)
-          </button>
+        <!-- Cloud Account Sync (Supabase-backed) -->
+        <div class="auth-box-landing" id="authBoxLanding">
+          <p>⚡ ACCOUNT BANAO — CHAT HISTORY HAR DEVICE PE SYNC HOGI</p>
+          <div class="auth-inline-form">
+            <input type="email" id="authEmail" placeholder="Email" autocomplete="email" aria-label="Email">
+            <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password" aria-label="Password">
+          </div>
+          <div class="auth-inline-actions">
+            <button class="google-auth-btn" id="authSignInBtn">Login</button>
+            <button class="google-auth-btn" id="authSignUpBtn">Naya Account Banao</button>
+          </div>
+          <p class="auth-status" id="authStatus" style="display:none;"></p>
+          <p class="auth-skip-note">Ya bina account ke <a href="#" id="authSkipLink">guest ki tarah shuru karo</a> (history sirf is browser mein rahegi).</p>
         </div>
       </section>
 
