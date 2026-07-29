@@ -1,3 +1,4 @@
+# Working In Progress Dont Use
 # 🪙 MaalBot Premium — Elite AI Financial Advisor
 
 > Pakistan's premier interactive AI financial assistant. Formulate investment strategies, estimate high-yield returns, and navigate complex Shariah-compliant mutual funds in Roman Urdu (Hinglish) and English.
